@@ -1,0 +1,20 @@
+[submodule "3rd/bx"]
+	path = 3rd/bx
+	url = https://github.com/bkaradzic/bx
+	branch = master
+[submodule "3rd/bgfx"]
+	path = 3rd/bgfx
+	url = https://github.com/bkaradzic/bgfx.git
+	branch = master
+[submodule "3rd/sdl"]
+	path = 3rd/sdl
+	url = https://github.com/spurious/SDL-mirror.git
+	branch = master
+[submodule "3rd/mflect"]
+	path = 3rd/mflect
+	url = https://github.com/rotanov/mflect.git
+	branch = master
+[submodule "3rd/lua"]
+	path = 3rd/lua
+	url = https://github.com/lua/lua.git
+	branch = master
