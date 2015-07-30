@@ -1,0 +1,5 @@
+macro(set_sources var_name)
+  foreach(fname ${ARGN})
+    list(APPEND ${var_name} ${SRC_BASE}/${fname})
+  endforeach(fname)
+endmacro(set_sources)
