@@ -6,7 +6,8 @@ set(SRC_BASE ${PROJECT_SOURCE_DIR}/../../3rd/bgfx/src)
 set(BX_PATH ${SRC_BASE}/../../bx)
 
 include_directories(${SRC_BASE} ${SRC_BASE}/../include  ${BX_PATH}/include
-  ${BX_PATH}/include/compat/msvc ${SRC_BASE}/../3rdparty/khronos)
+  ${BX_PATH}/include/compat/msvc ${SRC_BASE}/../3rdparty/khronos
+  ${SRC_BASE}/../3rdparty/dxsdk/include)
 
 include(../utils.cmake)
 
