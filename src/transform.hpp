@@ -45,7 +45,7 @@ public:
     parent.push_back(parent_transform.id);
     world.push_back(transform::identity);
     local.push_back(t);
-    return base::link(e, world.size() - 1);
+    return base::link(e);
   }
   void unlink(const entity e)
   {
