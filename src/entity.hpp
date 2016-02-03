@@ -40,6 +40,9 @@ public:
     PANIC_IF(!alive(e));
     count_--;
     dead_entities_.insert(e);
+    // for each system
+    // if system(e) == true
+    // remove system(c)
   }
 
   unsigned count() const
