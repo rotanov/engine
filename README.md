@@ -3,13 +3,13 @@
 ## Building
 
 Prerequisites on windows:
- - DirectX SDK (tested with one of June 2010)
- - Visual Studio 2013
+ - DirectX SDK (June 2010)
+ - Visual Studio 2015
 
 ```sh
     git clone --recursive https://github.com/rotanov/engine.git
-    cd engine
-    mkdir build
-    cd build
-    cmake -G "Visual Studio 12 2013" ../cmake
+    git submodule update --init --recursive
+    mkdir engine/build
+    cd engine/build
+    cmake -G "Visual Studio 14" ../cmake
 ```
