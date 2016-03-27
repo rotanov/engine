@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <unordered_map>
 
 #include "entity.hpp"
 #include "error.hpp"
@@ -17,11 +16,11 @@ public:
   {
     auto i = find_entity_(e);
     PANIC_IF(i == entities_.end());
-    return entities_[e.id];
+    return handle(i - entities_.begin());
   }
 private:
   std::vector<entity> entities_;
-  std::vector<decltype(handle_base<T>::id)> unused_handle_indices_;
+  std::vector<uint32_t> unused_handle_indices_;
 
   inline auto find_entity_(const entity e)
   {
@@ -35,7 +34,7 @@ protected:
     auto i = find_entity_(e);
     PANIC_IF(i != entities_.end());
     uint32_t new_index;
-    if (!unused_handle_indices_.empty) {
+    if (!unused_handle_indices_.empty()) {
       new_index = unused_handle_indices_.back();
       unused_handle_indices_.pop_back();
       entities_[new_index] = e;
@@ -73,13 +72,13 @@ public:
   void unlink(const entity e)
   {
     handle h = link(e);
-    std::swap(names_[h.id], names_.back());
+    std::swap(names_[h.index], names_.back());
     names_.pop_back();
     base::unlink(e);
   }
   std::string& name(const handle h)
   {
-    return names_[h.id];
+    return names_[h.index];
   }
 private:
   std::vector<std::string> names_;

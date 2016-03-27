@@ -10,6 +10,7 @@
 
 #include "application.hpp"
 #include "entity.hpp"
+#include "sparse_set.hpp"
 
 class pes_application
 {
@@ -27,7 +28,7 @@ private:
     const int size = 32.0f;
 
     auto root_tsh = a.transform_system.link(root, transform(v2(sw / 2, sh / 2), v2(0.0f), v2(0.5f, 0.5f)));
-    a.solid_quads.link(root, quad(v2(64.0f, 64.0f), 0xffffff, v2(0.0f, 0.0f)), root_tsh);
+    //a.solid_quads.link(root, quad(v2(64.0f, 64.0f), 0xffffff, v2(0.0f, 0.0f)), root_tsh);
     std::vector<transform_system::handle> children;
     children.push_back(root_tsh);
     std::vector<transform_system::handle> new_children;
@@ -48,13 +49,13 @@ private:
                   , v2(random_range(0.0f, 3.1415f))
                   , v2(1.0f, 1.0f) / (float)(sqrt(i + 1.0f)))
             , n);
-          a.solid_quads.link(
-            t
-            , quad(
-            random_range(v2(size / 2.0f, size / 2.0f), v2(size, size))
-            , 0x00FFFFFF & 0xfdf << (i * 3) | 0x44000000
-            , v2(0.5f, 0.5f))
-            , t_tsh);
+          //a.solid_quads.link(
+          //  t
+          //  , quad(
+          //  random_range(v2(size / 2.0f, size / 2.0f), v2(size, size))
+          //  , 0x00FFFFFF & 0xfdf << (i * 3) | 0x44000000
+          //  , v2(0.5f, 0.5f))
+          //  , t_tsh);
           new_children.push_back(t_tsh);
 
           //t->color = (uint8_t)(i / 72.0f * 255) << 24 | 0x0000ff | 0xFF << i*3;
@@ -115,26 +116,34 @@ public:
 
   void main_loop(float dt)
   {
-    auto root_th = application->transform_system.get_handle(root);
+    static int s = 0;
+    //auto root_th = application->transform_system.get_handle(root);
     int l1 = random_int(0, 100);
+    s += l1;
     static std::vector<entity> es;
     for (int i = 0; i < l1; i++) {
       auto e = application->entity_system.make();
       es.push_back(e);
-      application->transform_system.link(e, transform(v2(100.0f, 100.0f)), root_th);
+      //application->transform_system.link(e, transform(v2(100.0f, 100.0f)), root_th);
     }
-    int l2 = random_int(0, 100);
-    for (int i = 0; i < std::min(l2, (int)es.size()); i++) {
+
+    for (int i = 0; i < es.size(); i++) {
       if (!application->entity_system.alive(es[i])) {
         es.erase(std::find(es.begin(), es.end(), es[i]));
         i--;
         continue;
       }
-      application->entity_system.kill(es[i]);
-      application->transform_system.unlink(es[i]);
     }
-    printf("%d\n", application->entity_system.count());
-    printf("%d\n", l2 > l1);
+    int l2 = std::min(random_int(0, 100), (int)es.size());
+    s -= l2;
+    for (int i = 0; i < l2; i++) {
+      application->entity_system.kill(es[i]);
+      //application->transform_system.unlink(es[i]);
+    }
+    //printf("e-count: %d\n", application->entity_system.count());
+    //printf("free count: %d\n", application->entity_system.freeslot_count());
+    //printf("summ: %d\n", s);
+    //printf("%d\n", l2 > l1);
     //auto h = application->transform_system.get_handle(root);
     //auto& t = application->transform_system.get_local_transform(h);
     //t.rotation = v2(0.1f).rotate(t.rotation);

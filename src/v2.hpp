@@ -144,7 +144,7 @@ public:
 
   // rotate a 2d vector v by angle a
   // assuming this is a unit 2d vector: v2(x = cos(a), y = sin(a))
-  v2 rotate(const v2& v)
+  v2 rotate(const v2& v) const
   {
     v2 r;
     r.x = v.x * x - v.y * y;

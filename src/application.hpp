@@ -25,7 +25,7 @@ public:
   renderer renderer;
   transform_system transform_system;
   name_system name_system;
-  solid_quads solid_quads;
+  //solid_quads solid_quads;
 
   application() {}
 
@@ -92,24 +92,22 @@ public:
           quit = true;
         }
       }
-
       const double freq = double(bx::getHPFrequency());
       const double toMs = 1000.0 / freq;
       static int64_t totalMeasureTime = 0;
       int64_t measureTimeLast = bx::getHPCounter();
+      T::main_loop(0.016f);
+      double smoothingFactor = 0.01;
+      totalMeasureTime = ((bx::getHPCounter() - measureTimeLast) * smoothingFactor
+        + totalMeasureTime * (1.0 - smoothingFactor));
       transform_system.update();
-      solid_quads.draw(transform_system, renderer);
-      totalMeasureTime = ((bx::getHPCounter() - measureTimeLast) * 0.01 + totalMeasureTime * 0.99);
-
+      //solid_quads.draw(transform_system, renderer);
       renderer.begin_frame();
       renderer.render();
       bgfx::dbgTextPrintf(1, 1, 0x0f, "frame time: %f[ms]", 16.0f);
       bgfx::dbgTextPrintf(1, 2, 0x0f, "transform & draw time: %7.3f[ms]", double(totalMeasureTime)*toMs);
-      bgfx::dbgTextPrintf(1, 3, 0x0f, "total entities: %d", entity_system.count());
+      //bgfx::dbgTextPrintf(1, 3, 0x0f, "total entities: %d", entity_system.count());
       renderer.end_frame();
-
-      T::main_loop(0.016f);
-
       SDL_Delay(16);
     }
 

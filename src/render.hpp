@@ -157,49 +157,49 @@ struct quad
   }
 };
 
-struct solid_quads : public system_base<solid_quads>
-{
-  std::vector<quad> quads;
-  std::vector<transform_system::handle> transform_handles;
-  handle link(const entity e, const quad q, const transform_system::handle h)
-  {
-    quads.push_back(q);
-    transform_handles.push_back(h);
-    return base::link(e, quads.size() - 1);
-  }
-  void draw(transform_system& transform_system, renderer& renderer)
-  {
-    vertex* v = renderer.get_vertices(quads.size() * 6);
-
-    for (uint32_t i = 0; i < quads.size(); i++) {
-      auto& wt = transform_system.get_world_transform(transform_handles[i]);
-      auto& q = quads[i];
-      auto t = q.pivot * q.size;
-      v2 v_min = -t;
-      v2 v_max = q.size - t;
-
-      v2 rot = wt.rotation * wt.scale;
-
-      v[0].abgr = q.color;
-
-      v[0].pos = rot.rotate(v_min) + wt.position;
-      v[1].pos = rot.rotate(v2(v_min.x, v_max.y)) + wt.position;
-      v[2].pos = rot.rotate(v_max) + wt.position;
-      v[5].pos = rot.rotate(v2(v_max.x, v_min.y)) + wt.position;
-
-      v[3].pos = v[0].pos;
-      v[4].pos = v[2].pos;
-
-      v[1].abgr = v[0].abgr;
-      v[2].abgr = v[0].abgr;
-      v[3].abgr = v[0].abgr;
-      v[4].abgr = v[0].abgr;
-      v[5].abgr = v[0].abgr;
-      v += 6;
-    }
-  }
-  quad& get_quad(const handle h)
-  {
-    return quads[h.id];
-  }
-};
+//struct solid_quads : public system_base<solid_quads>
+//{
+//  std::vector<quad> quads;
+//  std::vector<transform_system::handle> transform_handles;
+//  handle link(const entity e, const quad q, const transform_system::handle h)
+//  {
+//    quads.push_back(q);
+//    transform_handles.push_back(h);
+//    return base::link(e, quads.size() - 1);
+//  }
+//  void draw(transform_system& transform_system, renderer& renderer)
+//  {
+//    vertex* v = renderer.get_vertices(quads.size() * 6);
+//
+//    for (uint32_t i = 0; i < quads.size(); i++) {
+//      auto& wt = transform_system.get_world_transform(transform_handles[i]);
+//      auto& q = quads[i];
+//      auto t = q.pivot * q.size;
+//      v2 v_min = -t;
+//      v2 v_max = q.size - t;
+//
+//      v2 rot = wt.rotation * wt.scale;
+//
+//      v[0].abgr = q.color;
+//
+//      v[0].pos = rot.rotate(v_min) + wt.position;
+//      v[1].pos = rot.rotate(v2(v_min.x, v_max.y)) + wt.position;
+//      v[2].pos = rot.rotate(v_max) + wt.position;
+//      v[5].pos = rot.rotate(v2(v_max.x, v_min.y)) + wt.position;
+//
+//      v[3].pos = v[0].pos;
+//      v[4].pos = v[2].pos;
+//
+//      v[1].abgr = v[0].abgr;
+//      v[2].abgr = v[0].abgr;
+//      v[3].abgr = v[0].abgr;
+//      v[4].abgr = v[0].abgr;
+//      v[5].abgr = v[0].abgr;
+//      v += 6;
+//    }
+//  }
+//  quad& get_quad(const handle h)
+//  {
+//    return quads[h.id];
+//  }
+//};
