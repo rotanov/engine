@@ -23,12 +23,13 @@ public:
   {
     int id = freelist_start_;
     if (id == UINT32_MAX) {
-      sparse_.push_back(dense_.size());
       generation_.push_back(0);
+      sparse_.push_back(UINT32_MAX);
       id = sparse_.size() - 1;
     } else {
       freelist_start_ = sparse_[freelist_start_];
     }
+    sparse_[id] = dense_.size();
     dense_.push_back(id);
     return entity(id, generation_[id]);
   }
