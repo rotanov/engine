@@ -140,10 +140,10 @@ public:
       application->entity_system.kill(es[i]);
       //application->transform_system.unlink(es[i]);
     }
-    //printf("e-count: %d\n", application->entity_system.count());
-    //printf("free count: %d\n", application->entity_system.freeslot_count());
-    //printf("summ: %d\n", s);
-    //printf("%d\n", l2 > l1);
+    printf("e-count: %d\n", application->entity_system.count());
+    printf("free count: %d\n", application->entity_system.freeslot_count());
+    printf("summ: %d\n", s);
+    printf("%d\n", l2 > l1);
     //auto h = application->transform_system.get_handle(root);
     //auto& t = application->transform_system.get_local_transform(h);
     //t.rotation = v2(0.1f).rotate(t.rotation);
