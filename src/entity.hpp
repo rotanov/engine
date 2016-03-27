@@ -2,9 +2,9 @@
 
 #include <cstdint>
 #include <vector>
-#include <unordered_set>
 
 #include "handle.hpp"
+#include "sparse_set.hpp"
 #include "error.hpp"
 
 class entity_system;
@@ -13,40 +13,58 @@ typedef handle_base<entity_system> entity;
 class entity_system
 {
 private:
-  std::unordered_set<entity> dead_entities_;
-  uint32_t next_index_ = 0;
-  unsigned count_ = 0;
+  std::vector<uint32_t> sparse_;
+  std::vector<uint32_t> dense_;
+  std::vector<uint32_t> generation_;
+  uint32_t freelist_start_ = UINT32_MAX;
 
 public:
   entity make()
   {
-    count_++;
-    if (dead_entities_.size() > 0) {
-      auto& e = *dead_entities_.begin();
-      dead_entities_.erase(e);
-      return e;
+    int id = freelist_start_;
+    if (id == UINT32_MAX) {
+      sparse_.push_back(dense_.size());
+      generation_.push_back(0);
+      id = sparse_.size() - 1;
     } else {
-      return entity(next_index_++);
+      freelist_start_ = sparse_[freelist_start_];
     }
+    dense_.push_back(id);
+    return entity(id, generation_[id]);
   }
-
-  bool alive(entity e) const
+  bool alive(const entity e) const
   {
-    return e.id < next_index_ && dead_entities_.count(e) == 0;
+    return e.index < sparse_.size()
+      && e.generation == generation_[e.index]
+      && sparse_[e.index] < dense_.size()
+      && dense_[sparse_[e.index]] == e.index;
   }
-
-  void kill(entity e)
+  void kill(const entity e)
   {
     PANIC_IF(!alive(e));
-    count_--;
-    dead_entities_.insert(e);
+    sparse_[dense_.back()] = sparse_[e.index];
+    dense_[sparse_[e.index]] = dense_.back();
+    dense_.pop_back();
+    generation_[e.index]++;
+    PANIC_IF(generation_[e.index] == UINT32_MAX);
+    sparse_[e.index] = freelist_start_;
+    freelist_start_ = e.index;
     // for each system
     // if system(e) == true
     // remove system(c)
   }
-
-  unsigned count() const
+  size_t count() const
   {
-    return count_;
+    return dense_.size();
+  }
+  size_t freeslot_count() const
+  {
+    int i = 0;
+    int c = freelist_start_;
+    while (c != UINT32_MAX) {
+      i++;
+      c = sparse_[c];
+    }
+    return i;
   }
 };

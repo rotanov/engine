@@ -67,6 +67,7 @@ set_sources(SOURCES main.cpp
   iv2.hpp
   render.cpp
   render.hpp
+  sparse_set.hpp
   system.hpp
   system.hpp
   tilemap.cpp

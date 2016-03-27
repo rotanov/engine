@@ -42,7 +42,7 @@ public:
     , transform t = transform::identity
     , handle parent_transform = handle(0))
   {
-    parent.push_back(parent_transform.id);
+    parent.push_back(parent_transform.index);
     world.push_back(transform::identity);
     local.push_back(t);
     return base::link(e);
@@ -53,14 +53,14 @@ public:
   }
   const transform& get_world_transform(const handle h) const
   {
-    return world[h.id];
+    return world[h.index];
   }
   void set_local_transform(const handle h, const transform& t)
   {
-    local[h.id] = t;
+    local[h.index] = t;
   }
   transform& get_local_transform(const handle h)
   {
-    return local[h.id];
+    return local[h.index];
   }
 };
