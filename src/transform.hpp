@@ -27,7 +27,7 @@ struct transform
   static const transform identity;
 };
 
-class transform_system : public system_base<transform_system>
+class transform_system : public system_specific<transform_system>
 {
 private:
   std::vector<transform> local;
@@ -40,7 +40,7 @@ public:
   handle link(
       const entity e
     , transform t = transform::identity
-    , handle parent_transform = handle(0))
+    , handle parent_transform = handle(0, 0))
   {
     parent.push_back(parent_transform.index);
     world.push_back(transform::identity);

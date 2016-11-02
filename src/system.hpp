@@ -6,79 +6,71 @@
 #include "entity.hpp"
 #include "error.hpp"
 
-template <typename T>
 class system_base
 {
-public:
-  typedef handle_base<T> handle;
-
-  handle get_handle(const entity e)
-  {
-    auto i = find_entity_(e);
-    PANIC_IF(i == entities_.end());
-    return handle(i - entities_.begin());
-  }
 private:
+  std::vector<uint32_t> sparse_;
+  std::vector<uint32_t> dense_;
+  std::vector<uint32_t> generation_;
   std::vector<entity> entities_;
-  std::vector<uint32_t> unused_handle_indices_;
-
-  inline auto find_entity_(const entity e)
-  {
-    return std::find(entities_.begin(), entities_.end(), e);
-  }
+  uint32_t freelist_start_ = UINT32_MAX;
+public:
+  system_base();
+  bool has_entity(const entity e) const;
+  handle_base get_handle(const entity e) const;
+  void unlink(const entity e);
 protected:
+  const std::vector<uint32_t>& sparse() const;
   typedef system_base base;
-
-  handle link(const entity e)
-  {
-    auto i = find_entity_(e);
-    PANIC_IF(i != entities_.end());
-    uint32_t new_index;
-    if (!unused_handle_indices_.empty()) {
-      new_index = unused_handle_indices_.back();
-      unused_handle_indices_.pop_back();
-      entities_[new_index] = e;
-    }
-    else {
-      new_index = entities_.size();
-      entities_.push_back(e);
-    }
-    return handle(new_index);
-  }
-  void unlink(const entity e)
-  {
-    auto i = find_entity_(e);
-    PANIC_IF(i == entities_.end());
-    uint32_t index = i - entities_.begin();
-    entities_[index] = entity::invalid;
-    unused_handle_indices_.push_back(index);
-  }
+  handle_base link(const entity e);
 };
 
-class system_observer
+template <typename T>
+class system_specific : public system_base
 {
+public:
+  typedef handle_specific<T> handle;
+};
 
+class system_manager
+{
+public:
+  static std::vector<system_base*>& systems()
+  {
+    static std::vector<system_base*> systems_;
+    return systems_;
+  }
 };
 
 // example system
-class name_system : public system_base<name_system>
+class name_system : public system_specific<name_system>
 {
-public:
-  handle link(const entity e)
+protected:
+  void on_allocate(const handle h)
   {
-    names_.push_back("");
-    return base::link(e);
+    if (h.index >= names_.size()) {
+      names_.resize(h.index + 1);
+    }
+  }
+  void on_deallocate()
+  {
+    std::swap(names_[h.index], names_.back());
+    names_.pop_back();
+  }
+public:
+  handle link(const entity e, const std::string& name)
+  {
+    auto h = base::link(e);
+    names_[h.index] = name;
+    return h;
   }
   void unlink(const entity e)
   {
-    handle h = link(e);
-    std::swap(names_[h.index], names_.back());
-    names_.pop_back();
     base::unlink(e);
   }
   std::string& name(const handle h)
   {
-    return names_[h.index];
+    return names_[sparse()[h.index]];
   }
 private:
   std::vector<std::string> names_;
