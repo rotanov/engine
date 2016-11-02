@@ -67,7 +67,6 @@ private:
     children.clear();
     printf("total nodes: %d\n", total_children + 1);
   }
-
   void test_case_solar_system(entity root)
   {
     //entity next = new_entity(root);
@@ -92,7 +91,6 @@ private:
     //set_scale(next, v2(0.5f, 0.5f));
     //set_scale(third, v2(0.5f, 0.5f));
   }
-
 public:
   entity root = entity::invalid;
   void init()
@@ -113,7 +111,6 @@ public:
     //application->name_system.name(root_name) = "pespespespespespespespes";
     //printf("%s\n", application->name_system.name(application->name_system.get_handle(root)).c_str());
   }
-
   void main_loop(float dt)
   {
     static int s = 0;
