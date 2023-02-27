@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <memory>
 #include <cstdint>
+#include <string>
 
 std::string format(const std::string format_string, ...)
 {
