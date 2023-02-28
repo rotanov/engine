@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <algorithm>
 
 #include "entity.hpp"
 #include "error.hpp"
@@ -54,7 +55,7 @@ protected:
   }
   void on_deallocate()
   {
-    std::swap(names_[h.index], names_.back());
+    // std::swap(names_[h.index], names_.back());
     names_.pop_back();
   }
 public:

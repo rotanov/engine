@@ -49,12 +49,13 @@ public:
       PANIC(format("Unable to initialize SDL: %s\n", SDL_GetError()));
     } else {
       sdl_window = SDL_CreateWindow(
-          "あのおすせべぢょるにぺす"
-        , SDL_WINDOWPOS_CENTERED
-        , SDL_WINDOWPOS_CENTERED
-        , window_width
-        , window_height
-        , SDL_WINDOW_SHOWN);
+          "ｷﾉｺの木の子",
+          SDL_WINDOWPOS_CENTERED,
+          SDL_WINDOWPOS_CENTERED,
+          window_width,
+          window_height,
+          SDL_WINDOW_SHOWN
+      );
     }
     bgfx::sdlSetWindow(sdl_window);
   }
@@ -70,11 +71,12 @@ public:
     bgfx::reset(window_width, window_height, reset);
     bgfx::setDebug(debug);
     bgfx::setViewClear(
+        0,
+        BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
+        0x303030ff,
+        1.0f,
         0
-      , BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH
-      , 0x303030ff
-      , 1.0f
-      , 0);
+    );
 
     vertex::init();
     renderer.init();
