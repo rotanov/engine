@@ -18,4 +18,10 @@ bool handle_base::operator ==(const handle_base rhs) const
     && rhs.generation == this->generation;
 }
 
+bool handle_base::operator !=(const handle_base rhs) const
+{
+  return rhs.index != this->index
+    || rhs.generation != this->generation;
+}
+
 const handle_base handle_base::invalid = handle_base(UINT32_MAX, UINT32_MAX);

@@ -41,11 +41,11 @@ void entity_system::kill(const entity e)
     }
   }
 }
-size_t entity_system::count() const
+uint32_t entity_system::count() const
 {
   return dense_.size();
 }
-size_t entity_system::freeslot_count() const
+uint32_t entity_system::freeslot_count() const
 {
   int i = 0;
   int c = freelist_start_;

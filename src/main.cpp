@@ -153,6 +153,7 @@ int main(int argc, char** argv)
 {
   application<pes_application> app;
   app.init();
+  // should be start?
   app.main_loop();
   return 0;
 }

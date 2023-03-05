@@ -38,6 +38,6 @@ public:
   entity make();
   bool alive(const entity e) const;
   void kill(const entity e);
-  size_t count() const;
-  size_t freeslot_count() const;
+  uint32_t count() const;
+  uint32_t freeslot_count() const;
 };

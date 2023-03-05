@@ -53,30 +53,9 @@ include_directories(${CMAKE_INSTALL_PREFIX}/include/SDL2
   ../3rd/mflect/mflect
 )
 
-set(SRC_BASE ../src/)
+# variable_watch(SOURCES)
 
-set_sources(SOURCES main.cpp
-  application.cpp
-  application.hpp
-  entity.cpp
-  entity.hpp
-  error.cpp
-  error.hpp
-  handle.cpp
-  handle.hpp
-  iv2.hpp
-  render.cpp
-  render.hpp
-  sparse_set.hpp
-  system.hpp
-  system.hpp
-  tilemap.cpp
-  tilemap.hpp
-  transform.cpp
-  transform.hpp
-  utils.hpp
-  v2.hpp
-)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "../src/*.hpp" "../src/*.cpp")
 
 add_executable(engine ${SOURCES})
 
