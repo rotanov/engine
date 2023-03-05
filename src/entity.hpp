@@ -22,7 +22,7 @@ public:
   {
     count_++;
     if (dead_entities_.size() > 0) {
-      auto e = *dead_entities_.begin();
+      auto& e = *dead_entities_.begin();
       dead_entities_.erase(e);
       return e;
     } else {
