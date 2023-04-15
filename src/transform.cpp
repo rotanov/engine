@@ -12,6 +12,7 @@ INLINE__ void update_single_transform(const transform& local, transform& world, 
 void transform_system::update()
 {
   uint32_t n = world.size();
+  world[0] = local[0];
   for (uint32_t i = 1; i < n; i++) {
     update_single_transform(local[i], world[i], world[parent[i]]);
   }
@@ -19,7 +20,5 @@ void transform_system::update()
 
 transform_system::transform_system()
 {
-  parent.push_back(handle::invalid.index);
-  local.push_back(transform::identity);
-  world.push_back(transform::identity);
+  auto super_root = link(entity::invalid, transform::identity, handle::invalid);
 }

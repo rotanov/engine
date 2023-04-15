@@ -18,3 +18,9 @@
 	path = 3rd/lua
 	url = https://github.com/lua/lua.git
 	branch = master
+[submodule "3rd/bimg"]
+	path = 3rd/bimg
+	url = https://github.com/bkaradzic/bimg.git
+[submodule "3rd/bgfx.cmake"]
+	path = 3rd/bgfx.cmake
+	url = git@github.com:bkaradzic/bgfx.cmake.git

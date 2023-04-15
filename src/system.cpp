@@ -4,8 +4,13 @@ system_base::system_base()
 {
   system_manager::systems().push_back(this);
 }
-bool system_base::has_entity(const entity e) const
+bool system_base::has_entity(const entity entity) const
 {
+  for (auto&& e : entities_) {
+    if (e == entity) {
+      return true;
+    }
+  }
   return false;
 }
 handle_base system_base::get_handle(const entity e) const
@@ -14,6 +19,10 @@ handle_base system_base::get_handle(const entity e) const
 }
 handle_base system_base::link(const entity e)
 {
+  // slwo!
+  //if (has_entity(e)) {
+  //  return get_handle(e);
+  //}
   int id = freelist_start_;
   if (id == UINT32_MAX) {
     id = sparse_.size();
@@ -43,8 +52,7 @@ void system_base::unlink(const entity e)
   sparse_[index] = freelist_start_;
   freelist_start_ = index;
 }
-
-inline const std::vector<uint32_t>& system_base::sparse() const
+const std::vector<uint32_t>& system_base::sparse() const
 {
   return sparse_;
 }

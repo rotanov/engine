@@ -62,12 +62,17 @@ public:
   handle link(const entity e, const std::string& name)
   {
     auto h = base::link(e);
+    on_allocate(h);
     names_[h.index] = name;
     return h;
   }
   void unlink(const entity e)
   {
     base::unlink(e);
+  }
+  const std::string& name(const handle h) const
+  {
+    return names_[sparse()[h.index]];
   }
   std::string& name(const handle h)
   {

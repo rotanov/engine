@@ -12,8 +12,11 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
 endif()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+  add_compile_options("/Zc:__cplusplus")
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
 include(utils.cmake)
 
@@ -29,10 +32,18 @@ ExternalProject_Add(lua
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
 )
 
-ExternalProject_Add(bgfx
-  PREFIX ${CMAKE_BINARY_DIR}/bgfx
+# ExternalProject_Add(bgfx
+#   PREFIX ${CMAKE_BINARY_DIR}/bgfx
+#   DOWNLOAD_COMMAND ""
+#   SOURCE_DIR ${CMAKE_SOURCE_DIR}/bgfx
+#   CMAKE_ARGS
+#     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+# )
+
+ExternalProject_Add(bgfx.cmake
+  PREFIX ${CMAKE_BINARY_DIR}/bgfx.cmake
   DOWNLOAD_COMMAND ""
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/bgfx
+  SOURCE_DIR ${CMAKE_SOURCE_DIR}/../3rd/bgfx.cmake
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
 )
@@ -46,9 +57,12 @@ ExternalProject_Add(sdl
 )
 
 link_directories(${CMAKE_INSTALL_PREFIX}/lib)
-include_directories(${CMAKE_INSTALL_PREFIX}/include/SDL2
-  ../3rd/bgfx/include
-  ../3rd/bx/include
+include_directories(
+  ${CMAKE_INSTALL_PREFIX}/include/SDL2
+  ../3rd/bgfx.cmake/bgfx/include
+  ../3rd/bgfx.cmake/bx/include
+  ../3rd/bgfx.cmake/bimg/include
+  ../3rd/bgfx.cmake/bx/include/compat/msvc
   ../3rd/lua/src
   ../3rd/mflect/mflect
 )
@@ -59,10 +73,33 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "../src/*.hpp" "../src/*.cpp")
 
 add_executable(engine ${SOURCES})
 
+if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
+  target_compile_features(engine INTERFACE cxx_std_20)
+  target_compile_options(engine INTERFACE "/Zc:__cplusplus")
+endif()
+
+target_compile_definitions(engine PUBLIC "BX_CONFIG_DEBUG=1")
+target_compile_definitions(engine PUBLIC "__STDC_LIMIT_MACROS")
+target_compile_definitions(engine PUBLIC "__STDC_FORMAT_MACROS")
+target_compile_definitions(engine PUBLIC "__STDC_CONSTANT_MACROS")
+
 add_dependencies(engine lua)
 add_dependencies(engine sdl)
-add_dependencies(engine bgfx)
+add_dependencies(engine bgfx.cmake)
 
-target_link_libraries(engine ../lib/lua ../lib/bgfx SDL2 SDL2main Winmm Version Imm32 psapi)
+target_link_libraries(
+  engine
+  ../lib/lua
+  ../lib/bgfx
+  bx
+  bimg
+  bimg_decode
+  SDL2
+  SDL2main
+  Winmm
+  Version
+  Imm32
+  psapi
+)
 
 install(TARGETS engine RUNTIME DESTINATION bin)

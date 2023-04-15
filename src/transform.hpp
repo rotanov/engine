@@ -38,10 +38,10 @@ public:
   transform_system();
   void update();
   handle link(
-      const entity e
-    , transform t = transform::identity
-    , handle parent_transform = handle(0, 0))
-  {
+    const entity e,
+    transform t = transform::identity,
+    handle parent_transform = handle(0, 0)
+  ) {
     parent.push_back(parent_transform.index);
     world.push_back(transform::identity);
     local.push_back(t);

@@ -6,13 +6,23 @@
 
 struct iv2
 {
-  uint32_t x;
-  uint32_t y;
+  int32_t x;
+  int32_t y;
 
   iv2() {}
-  INLINE__ explicit iv2(uint32_t x, uint32_t y)
+
+  INLINE__ explicit iv2(int32_t x, int32_t y)
     : x(x)
     , y(y)
   {}
 
+  iv2 operator +(const iv2& rhs) const
+  {
+    return iv2(x + rhs.x, y + rhs.y);
+  }
+
+  int32_t& operator [](const int i)
+  {
+    return (&x)[i];
+  }
 };

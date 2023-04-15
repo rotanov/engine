@@ -12,7 +12,8 @@ struct handle_base
   uint32_t generation;
   explicit handle_base(const uint32_t index, const uint32_t generation);
   explicit handle_base(const uint32_t index);
-  handle_base() = delete;
+  //handle_base() = delete;
+  handle_base() {}
   bool operator ==(const handle_base rhs) const;
   bool operator !=(const handle_base rhs) const;
   static const handle_base invalid;
@@ -29,6 +30,12 @@ struct handle_specific : public handle_base
 {
   explicit handle_specific(const uint32_t index, const uint32_t generation)
     : handle_base(index, generation)
+  {
+
+  }
+
+  explicit handle_specific()
+    : handle_base()
   {
 
   }

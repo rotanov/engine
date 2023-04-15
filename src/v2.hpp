@@ -151,6 +151,11 @@ public:
     r.y = v.y * x + v.x * y;
     return r;
   }
+
+  float& operator [](const int i)
+  {
+    return (&x)[i];
+  }
 };
 
 template<>
