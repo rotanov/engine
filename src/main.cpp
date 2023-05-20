@@ -12,6 +12,19 @@
 #include "entity.hpp"
 #include "sparse_set.hpp"
 
+// todo: consider using those typedefs though
+// i'm unsure how much it's frown upon
+typedef int8_t i8;
+typedef uint8_t u8;
+typedef int16_t i16;
+typedef uint16_t u16;
+typedef int32_t i32;
+typedef uint32_t u32;
+typedef int64_t i64;
+typedef uint64_t u64;
+typedef float f32;
+typedef double f64;
+
 class case2
 {
 protected:
@@ -170,32 +183,112 @@ public:
     a->solid_quads.link(char_e, quad(v2(char_width, char_height), 0xffffffff, v2(0.0f, 0.0f)), char_th, calicker_tex);
   }
 
-  v2 char_v = v2(0, 0);
-  v2 jump_v = v2(0, 0);
+  enum class walk_state
+  {
+    none,
+    left,
+    right,
+    left_then_right,
+    right_then_left,
+  };
+
+  enum class jump_state
+  {
+    none,
+    start_jump,
+    jump,
+    start_land,
+    land,
+  };
+
+  // ---
+  //     3
+  //    ---
+  // 2 | P | 0
+  //    ---
+  //     1
+  // 0, 90, 180, 270 degrees directions
+  // top and bottom should be swapped if global y axis changes from
+  // downward to upward
+  enum class direction_index
+  {
+    right = 0,
+    down = 1,
+    left  = 2,
+    up = 3,
+  };
+
+  // jump_state = f(jump_state, walk_state, input, update, player_flags) ?
+  // walk_state = f(jump_state, walk_state, input, update, player_flags) ?
+  // player_flags is like if player can double jump or dash because they've got a powerup
+
+  walk_state walk_state = walk_state::none;
+  jump_state jump_state = jump_state::none;
+
+  const float walk_speed = 200.0f;
+  const float max_jump_height = -32.0f * 2.0f - char_height * 0.5f - 5.0f;
+  const float jump_duration = 0.4f;
+  const float landing_duration = 0.2f;
+
+  const float jump_acceleration = -2.0f * max_jump_height / (jump_duration * jump_duration);
+  const float initial_jump_velocity = 2.0f * max_jump_height / jump_duration;
+  const float land_acceleration = -2.0f * max_jump_height / (landing_duration * landing_duration);
 
   std::unordered_map<int, solid_quads::handle> morcowki;
 
+
+  v2 velocity { 0.0f, 0.0f };
+
+  bool contact_up() { return contact_state[static_cast<int>(direction_index::up)]; }
+  bool contact_down() { return contact_state[static_cast<int>(direction_index::down)]; }
+  bool contact_left() { return contact_state[static_cast<int>(direction_index::left)]; }
+  bool contact_right() { return contact_state[static_cast<int>(direction_index::right)]; }
+
   void main_loop(float dt)
   {
-    auto char_v_m = char_v;
-    if (is_in_contact_with[0] && char_v_m.y < 0.0f) {
-      char_v_m = v2(char_v_m.x, 0.0f);
-      jump_v = v2(0, 0);
+    auto& v = velocity;
+    if (contact_up() && jump_state == jump_state::jump) {
+      jump_state = jump_state::start_land;
     }
-    if (is_in_contact_with[2] && char_v_m.y > 0.0f) {
-      char_v_m = v2(char_v_m.x, 0.0f);
+    if (contact_down() && jump_state == jump_state::land) {
+      v.y = 0.0f;
+      jump_state = jump_state::none;
     }
-    if (is_in_contact_with[1] && char_v.x > 0.0f) {
-      char_v_m = v2(0.0f, char_v_m.y);
+    if (jump_state == jump_state::none) {
+      v.y = 0.0f;
     }
-    if (is_in_contact_with[3] && char_v.x < 0.0f) {
-      char_v_m = v2(0.0f, char_v_m.y);
+    v.x = 0.0f;
+    if (walk_state == walk_state::left) {
+      v.x = -walk_speed;
     }
-    char_v_m *= 2.0f;
+    if (walk_state == walk_state::right) {
+      v.x = walk_speed;
+    }
+    if (contact_right() && walk_state == walk_state::right) {
+      v.x = 0.0f;
+    }
+    if (contact_left() && walk_state == walk_state::left) {
+      v.x = 0.0f;
+    }
     auto& t = application->transform_system.get_local_transform(char_th);
-    jump_v *= 0.9f;
-    auto a = jump_v * 10;
-    auto offset = (char_v_m + a + (!is_in_contact_with[2] ? v2(0.0f, 2.0f) : v2(0.0f, 0.0f))) * 100 * dt;
+    auto a = jump_state != jump_state::land ? jump_acceleration : land_acceleration;
+    if (jump_state == jump_state::start_jump) {
+      v.y = initial_jump_velocity;
+      jump_state = jump_state::jump;
+    }
+    if (contact_down() && jump_state == jump_state::none) {
+      a = 0.0f;
+    }
+    v += v2(0.0f, a) * dt;
+    if (jump_state == jump_state::jump && v.y > 0.0f) {
+      jump_state = jump_state::start_land;
+    }
+    if (jump_state == jump_state::start_land) {
+      v.y = 0;
+      jump_state = jump_state::land;
+    }
+
+    auto offset = v * dt;
 
     auto t0 = t.position;
     auto t1 = t.position + offset;
@@ -208,47 +301,27 @@ public:
     auto get_corners = [=](v2 char_position) {
       v2 fix = v2(tile_width / 2, tile_height / 2);
       auto p = char_position + fix;
-      // left top
-      auto grid_p_0 = p;
-      // right top
-      auto grid_p_1 = v2(p.x + char_width, p.y);
-      // right bottom
-      auto grid_p_2 = v2(p.x + char_width, p.y + char_height);
-      // left bottom
-      auto grid_p_3 = v2(p.x, p.y + char_height);
-      return std::vector<v2> { grid_p_0, grid_p_1, grid_p_2, grid_p_3 };
+      auto left_top = p;
+      auto right_top = v2(p.x + char_width, p.y);
+      auto right_bottom = v2(p.x + char_width, p.y + char_height);
+      auto left_bottom = v2(p.x, p.y + char_height);
+      return std::vector<v2> { right_top, right_bottom, left_bottom, left_top };
     };
 
     auto get_cells = [=](v2 char_position) {
       v2 fix = v2(tile_width / 2, tile_height / 2);
       auto p = char_position + fix;
-      // left top
-      auto grid_p_0 = iv2(p.x / tile_width, p.y / tile_height);
-      // right top
-      auto grid_p_1 = iv2((p.x + char_width) / tile_width, p.y / tile_height);
-      // right bottom
-      auto grid_p_2 = iv2((p.x + char_width) / tile_width, (p.y + char_height) / tile_height);
-      // left bottom
-      auto grid_p_3 = iv2(p.x / tile_width, (p.y + char_height) / tile_height);
-      return std::vector<iv2> { grid_p_0, grid_p_1, grid_p_2, grid_p_3 };
+      auto left_top = iv2(p.x / tile_width, p.y / tile_height);
+      auto right_top = iv2((p.x + char_width) / tile_width, p.y / tile_height);
+      auto right_bottom = iv2((p.x + char_width) / tile_width, (p.y + char_height) / tile_height);
+      auto left_bottom = iv2(p.x / tile_width, (p.y + char_height) / tile_height);
+      return std::vector<iv2> { right_top, right_bottom, left_bottom, left_top };
     };
-
-    auto get_box = [=](int x, int y) {
-      auto bx = x * tile_width;
-      auto by = y * tile_height;
-      return std::vector<v2>  {
-        v2(bx, by),
-        v2(bx + tile_width, by),
-        v2(bx + tile_width, by + tile_height),
-        v2(bx, by + tile_height)
-      };
-    };
-
 
     auto is_any_collision = [=, &t, &tp]() {
       auto ps0 = get_cells(t.position);
       auto ps1 = get_cells(lerp(t0, t1, tp));
-      for (auto pi : { 0, 1, 2, 3 }) {
+      for (int pi = 0; pi < 4; pi++) {
         auto ix0 = ps0[pi].x;
         auto iy0 = ps0[pi].y;
         auto ix1 = ps1[pi].x;
@@ -267,44 +340,48 @@ public:
       return false;
     };
 
+    int iterationsToResolveCollision = 0;
     while (true) {
+      iterationsToResolveCollision++;
       if (!is_any_collision()) {
         break;
       }
       tp *= 0.9f;
     }
+    printf("iterationsToResolveCollision: %d\n", iterationsToResolveCollision);
 
     t.position = lerp(t0, t1, tp);
 
     iv2 offsets[] = {
-      iv2(0, -1),
       iv2(1, 0),
       iv2(0, 1),
       iv2(-1, 0),
+      iv2(0, -1),
     };
 
     int v2s[] = {
-      1, 0, 1, 0
+      0, 1, 0, 1
     };
 
     float near_off[] = {
-      tile_height, 0, 0, tile_width,
+      0, 0, tile_width, tile_height,
     };
 
     auto ps0 = get_cells(t.position);
     auto ps0c = get_corners(t.position);
     for (int i = 0; i < 4; i++) {
-      is_in_contact_with[i] = false;
+      contact_state[i] = false;
       int i0 = i % 4;
       int i1 = (i + 1) % 4;
       for (auto j : { i0, i1 }) {
-        // todo range check for map tiles
-        auto inext = ps0[j] + offsets[i];
-        if (str_map[inext.y * map_width + inext.x] != 'x') {
+        // todo range check for map tiles for when our tiles will be smaller
+        // than object rectangle
+        auto i_next = ps0[j] + offsets[i];
+        if (str_map[i_next.y * map_width + i_next.x] != 'x') {
           continue;
         }
-        if (abs(ps0c[j][v2s[i]] - inext[v2s[i]] * tile_height - near_off[i]) < 0.01f) {
-          is_in_contact_with[i] = true;
+        if (abs(ps0c[j][v2s[i]] - i_next[v2s[i]] * tile_height - near_off[i]) < 0.01f) {
+          contact_state[i] = true;
         }
       }
     }
@@ -321,7 +398,11 @@ public:
           q.color = 0x00ffffff;
           morcowki.erase(index);
           if (morcowki.empty()) {
-            printf("\n\nKot! You've got to pay 5000 AMD now. Those mor-cows were imported from yu ass ei.\n\n\n\n\n\nNo really, HAPPY BIRTHDAY NOW!!!111!11");
+            printf(
+              "\n\nKot! You've got to pay 5000 AMD now. "
+              "Those mor-cows were imported from yu ass ei."
+              "\n\n\n\n\n\nNo really, HAPPY BIRTHDAY NOW!!!111!11"
+            );
           }
           continue;
         }
@@ -330,30 +411,88 @@ public:
 
     get_morcowki();
 
-    if (is_in_contact_with[0] || is_in_contact_with[2]) {
-      jump_v = v2(0.0f, 0.0f);
+    // we're checking for contact state in input handling
+    // but we're also making contact state affect jump state here.
+    // so may be we should trust jump state to be set on update?
+    switch (jump_state) {
+    case jump_state::none:
+    {
+      if (!contact_down()) {
+        jump_state = jump_state::start_land;
+      }
+    }
+    case jump_state::start_jump:; break;
+    case jump_state::jump:
+    {
+      if (contact_up()) {
+        jump_state = jump_state::start_land;
+      }
+      break;
+    }
+    case jump_state::land:
+    {
+      if (contact_down()) {
+        jump_state = jump_state::none;
+      }
+    }
     }
 
-    //printf("is_in_contact_with: %d %d %d %d\n", is_in_contact_with[0], is_in_contact_with[1], is_in_contact_with[2], is_in_contact_with[3]);
+    //printf(
+    //  "contact state:\n\tright: %d\n\tdown: %d\n\tleft: %d\n\tup: %d\n",
+    //  contact_right(),
+    //  contact_down(),
+    //  contact_left(),
+    //  contact_up()
+    //);
   }
 
-  bool is_in_contact_with[4] { false, false, false, false };
+  void paniq()
+  {
+    __debugbreak();
+  }
+
+  // ordered by direction_index
+  bool contact_state[4]{ false, false, false, false };
 
   void consume_key_down(SDL_Keycode key)
   {
     auto root_th = application->transform_system.get_handle(root_e);
     auto& root_t = application->transform_system.get_local_transform(root_th);
     auto& t = application->transform_system.get_local_transform(char_th);
-    if (key == SDLK_z && is_in_contact_with[2]) {
-      jump_v = v2(0, -1);
+    if (key == SDLK_z) {
+      switch (jump_state) {
+      case jump_state::none:
+      {
+        if (contact_down()) {
+          jump_state = jump_state::start_jump;
+        }
+      }
+      break;
+      case jump_state::jump: break;
+      case jump_state::land: break;
+      case jump_state::start_jump: break;
+      case jump_state::start_land: break;
+      }
     } else if (key == SDLK_UP) {
       // char_v += v2(0, -1);
     } else if (key == SDLK_DOWN) {
       // char_v += v2(0, 1);
     } else if (key == SDLK_LEFT) {
-      char_v += v2(-1, 0);
+      switch (walk_state) {
+      case walk_state::none: walk_state = walk_state::left; break;
+      case walk_state::right: walk_state = walk_state::right_then_left; break;
+      case walk_state::left:
+      case walk_state::right_then_left:
+      case walk_state::left_then_right: paniq();
+      }
     } else if (key == SDLK_RIGHT) {
-      char_v += v2(1, 0);
+      switch (walk_state) {
+      case walk_state::none: walk_state = walk_state::right; break;
+      case walk_state::left: walk_state = walk_state::left_then_right; break;
+      case walk_state::right:
+      case walk_state::right_then_left:
+      case walk_state::left_then_right: paniq();
+      }
     } else if (key == SDLK_q) {
       root_t.scale *= 1.1f;
     } else if (key == SDLK_e) {
@@ -363,15 +502,31 @@ public:
   void consume_key_up(SDL_Keycode key)
   {
     if (key == SDLK_z) {
-      jump_v = v2(0, 0);
+      switch (jump_state) {
+      case jump_state::jump: jump_state = jump_state::start_land; break;
+      case jump_state::none:
+      case jump_state::land: break;
+      case jump_state::start_jump: break;
+      case jump_state::start_land: break;
+      }
     } else if (key == SDLK_UP) {
-      // char_v = v2(char_v.x, 0);
     } else if (key == SDLK_DOWN) {
-      // char_v = v2(char_v.x, 0);
     } else if (key == SDLK_LEFT) {
-      char_v -= v2(-1.0, 0.0f);
+      switch (walk_state) {
+      case walk_state::left: walk_state = walk_state::none; break;
+      case walk_state::left_then_right: walk_state = walk_state::right; break;
+      case walk_state::right_then_left: walk_state = walk_state::right; break;
+      case walk_state::none:
+      case walk_state::right: paniq();
+      }
     } else if (key == SDLK_RIGHT) {
-      char_v -= v2(1.0f, 0.0f);
+      switch (walk_state) {
+      case walk_state::right: walk_state = walk_state::none; break;
+      case walk_state::left_then_right: walk_state = walk_state::left; break;
+      case walk_state::right_then_left: walk_state = walk_state::left; break;
+      case walk_state::none:
+      case walk_state::left: paniq();
+      }
     }
   }
 };
@@ -381,7 +536,6 @@ unsigned g_seed = 0;
 
 int main(int argc, char** argv)
 {
-  printf(SDL_GetBasePath());
   application<case1> a;
   a.init();
   a.start();
