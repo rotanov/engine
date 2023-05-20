@@ -1,5 +1,7 @@
 #pragma once
 
+#include <exception>
+
 #include "SDL.h"
 #include "bgfx/bgfx.h"
 #include "bx/timer.h"
@@ -60,6 +62,30 @@ public:
 
   void init()
   {
+    set_terminate([]() {
+      // was trying to catch EXCEPTION_BREAKPOINT exception here but failed
+      const char* text = nullptr;
+      try {
+        auto e_ptr = std::current_exception();
+        if (e_ptr != nullptr) {
+          std::rethrow_exception(e_ptr);
+        }
+      } catch (const std::exception& e) {
+        text = e.what();
+      } catch (const char* e_text) {
+        text = e_text;
+      } catch (DWORD number) {
+        auto format_string = "number: %d";
+        auto size = snprintf(NULL, 0, format_string, number);
+        auto buffer = malloc(size + 1);
+        sprintf(static_cast<char*>(buffer), format_string, number);
+      }
+      if (text != nullptr) {
+        printf(text);
+      }
+      std::abort();
+    });
+
     L = luaL_newstate();
     create_window();
 
