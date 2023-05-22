@@ -20,42 +20,18 @@ endif()
 
 include(utils.cmake)
 
-set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/..)
+set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/../install/)
 
-include(ExternalProject)
+add_subdirectory(lua ./lua)
+add_subdirectory(../3rd/bgfx.cmake ./bgfx)
 
-ExternalProject_Add(lua
-  PREFIX ${CMAKE_BINARY_DIR}/lua
-  DOWNLOAD_COMMAND ""
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/lua
-  CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+set(SDL_STATIC ON CACHE BOOL "" FORCE)
+set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+add_subdirectory(../3rd/sdl ./sdl 
+  # EXCLUDE_FROM_ALL
 )
 
-# ExternalProject_Add(bgfx
-#   PREFIX ${CMAKE_BINARY_DIR}/bgfx
-#   DOWNLOAD_COMMAND ""
-#   SOURCE_DIR ${CMAKE_SOURCE_DIR}/bgfx
-#   CMAKE_ARGS
-#     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-# )
-
-ExternalProject_Add(bgfx.cmake
-  PREFIX ${CMAKE_BINARY_DIR}/bgfx.cmake
-  DOWNLOAD_COMMAND ""
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/../3rd/bgfx.cmake
-  CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-)
-
-ExternalProject_Add(sdl
-  PREFIX ${CMAKE_BINARY_DIR}/sdl
-  DOWNLOAD_COMMAND ""
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/../3rd/sdl
-  CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-)
-
+# todo: remove and see what'll happen, because probably not needed anymore
 link_directories(${CMAKE_INSTALL_PREFIX}/lib)
 include_directories(
   ${CMAKE_INSTALL_PREFIX}/include/SDL2
@@ -67,7 +43,24 @@ include_directories(
   ../3rd/mflect/mflect
 )
 
-# variable_watch(SOURCES)
+# todo: glob assets
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/../assets/tile.png
+  ${CMAKE_CURRENT_BINARY_DIR}/assets/tile.png
+  COPYONLY
+)
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/../assets/morcow.png
+  ${CMAKE_CURRENT_BINARY_DIR}/assets/morcow.png
+  COPYONLY
+)
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/../assets/calicker.png
+  ${CMAKE_CURRENT_BINARY_DIR}/assets/calicker.png
+  COPYONLY
+)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "../src/*.hpp" "../src/*.cpp")
 
@@ -78,28 +71,29 @@ if ((MSVC) AND (MSVC_VERSION GREATER_EQUAL 1914))
   target_compile_options(engine INTERFACE "/Zc:__cplusplus")
 endif()
 
+# why?
 target_compile_definitions(engine PUBLIC "BX_CONFIG_DEBUG=1")
 target_compile_definitions(engine PUBLIC "__STDC_LIMIT_MACROS")
 target_compile_definitions(engine PUBLIC "__STDC_FORMAT_MACROS")
 target_compile_definitions(engine PUBLIC "__STDC_CONSTANT_MACROS")
 
-add_dependencies(engine lua)
-add_dependencies(engine sdl)
-add_dependencies(engine bgfx.cmake)
-
 target_link_libraries(
   engine
-  ../lib/lua
-  ../lib/bgfx
+  lua
+  bgfx
   bx
   bimg
   bimg_decode
-  SDL2
   SDL2main
+  SDL2-static
   Winmm
   Version
   Imm32
   psapi
 )
 
+message(${CMAKE_INSTALL_PREFIX})
+
 install(TARGETS engine RUNTIME DESTINATION bin)
+file(GLOB_RECURSE ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets/*)
+install(FILES ${ASSETS} DESTINATION assets)

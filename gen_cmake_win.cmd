@@ -1,0 +1,1 @@
+cmake -S cmake -B build

@@ -159,7 +159,7 @@ public:
     auto& root_t = application->transform_system.get_local_transform(root_th);
     root_t.position = v2(tile_width, tile_width);
     root_t.scale *= 2.5;
-    auto c_path = std::string(SDL_GetBasePath());
+    auto c_path = std::string(SDL_GetBasePath()) + "/../assets/";
     auto tile_tex = a->texture_system.link(root_e, (c_path + "tile.png").c_str());
     auto morcow_tex = a->texture_system.link(root_e, (c_path + "morcow.png").c_str());
     auto calicker_tex = a->texture_system.link(root_e, (c_path + "calicker.png").c_str());

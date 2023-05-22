@@ -1,6 +1,2 @@
 build/
-lib/
-bin/
-include/
-editor/build/
-build*/
+install/
