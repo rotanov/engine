@@ -6,6 +6,7 @@
 #include "bgfx/bgfx.h"
 #include "bx/timer.h"
 
+#include "defines.hpp"
 #include "utils.hpp"
 #include "error.hpp"
 #include "system.hpp"
@@ -13,14 +14,123 @@
 #include "render.hpp"
 #include "entity.hpp"
 
+class window_implementation
+{
+public:
+  window_implementation()
+  {
+
+  }
+
+  // "ｷﾉｺの木の子"
+  void create(i32 width, i32 height, const char* title)
+  {
+    sdl_window = SDL_CreateWindow(
+      title,
+      SDL_WINDOWPOS_CENTERED,
+      SDL_WINDOWPOS_CENTERED,
+      width,
+      height,
+      SDL_WINDOW_SHOWN
+    );
+    SDL_SysWMinfo wmi;
+    SDL_VERSION(&wmi.version);
+    if (!SDL_GetWindowWMInfo(sdl_window, &wmi)) {
+      return;
+    }
+    bgfx::Init init;
+    init.type = bgfx::RendererType::Enum::OpenGL;
+    init.vendorId = BGFX_PCI_ID_NONE;
+    bgfx::PlatformData pd;
+#if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
+    pd.ndt = wmi.info.x11.display;
+    pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
+#elif BX_PLATFORM_OSX
+    pd.ndt = NULL;
+    pd.nwh = wmi.info.cocoa.window;
+#elif BX_PLATFORM_WINDOWS
+    pd.ndt = NULL;
+    pd.nwh = wmi.info.win.window;
+#elif BX_PLATFORM_STEAMLINK
+    pd.ndt = wmi.info.vivante.display;
+    pd.nwh = wmi.info.vivante.window;
+#endif // BX_PLATFORM_
+    pd.context = NULL;
+    pd.backBuffer = NULL;
+    pd.backBufferDS = NULL;
+
+    init.platformData = pd;
+
+    auto size = get_size();
+
+    init.resolution.width = size.x;
+    init.resolution.height = size.y;
+    init.resolution.reset = BGFX_RESET_VSYNC | BGFX_RESET_SRGB_BACKBUFFER;
+
+    bgfx::init(init);
+  }
+
+  void destroy()
+  {
+
+  }
+
+  iv2 get_size() const
+  {
+    if (sdl_window == nullptr) { throw; }
+    iv2 size;
+    SDL_GetWindowSize(sdl_window, &size.x, &size.y);
+    return size;
+  }
+
+  void set_size(const iv2& size)
+  {
+    if (sdl_window == nullptr) { throw; }
+    SDL_SetWindowSize(sdl_window, size.x, size.y);
+  }
+
+private:
+  SDL_Window* sdl_window = nullptr;
+};
+
+class window
+{
+public:
+  iv2 get_position() const
+  {
+
+  }
+
+  void set_position(const iv2& position)
+  {
+
+  }
+
+  iv2 get_size() const
+  {
+    return implementation.get_size();
+  }
+
+  void set_size(const iv2& size)
+  {
+    implementation.set_size(size);
+  }
+
+  window()
+  {
+
+  }
+
+private:
+  window_implementation implementation;
+};
+
 template <typename T>
 class application : public T
 {
 private:
-  uint32_t window_width = 1600;
-  uint32_t window_height = 1200;
-  SDL_Window* sdl_window = nullptr;
   lua_State* L = nullptr;
+  std::vector<window> windows;
 public:
   entity_system entity_system;
   renderer renderer;
@@ -30,34 +140,10 @@ public:
 
   application() {}
 
-  void set_window_size(uint32_t width, uint32_t height)
-  {
-    window_width = width;
-    window_height = height;
-    if (sdl_window != nullptr) {
-      SDL_SetWindowSize(sdl_window, width, height);
-    }
-  }
-
-  iv2 get_window_size()
-  {
-    return iv2(window_width, window_height);
-  }
-
   void create_window()
   {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-      PANIC(format("Unable to initialize SDL: %s\n", SDL_GetError()));
-    } else {
-      sdl_window = SDL_CreateWindow(
-        "ｷﾉｺの木の子",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        window_width,
-        window_height,
-        SDL_WINDOW_SHOWN
-      );
-    }
+    window w;
+    windows.push_back(w);
   }
 
   void init()
@@ -86,43 +172,10 @@ public:
       std::abort();
     });
 
-    L = luaL_newstate();
-    create_window();
-
-    bgfx::Init init;
-    init.type = bgfx::RendererType::Enum::OpenGL;
-    init.vendorId = BGFX_PCI_ID_NONE;
-
-    SDL_SysWMinfo wmi;
-    SDL_VERSION(&wmi.version);
-    if (!SDL_GetWindowWMInfo(sdl_window, &wmi)) {
-      return;
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+      PANIC(format("Unable to initialize SDL: %s\n", SDL_GetError()));
     }
-    bgfx::PlatformData pd;
-#if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
-    pd.ndt = wmi.info.x11.display;
-    pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-#elif BX_PLATFORM_OSX
-    pd.ndt = NULL;
-    pd.nwh = wmi.info.cocoa.window;
-#elif BX_PLATFORM_WINDOWS
-    pd.ndt = NULL;
-    pd.nwh = wmi.info.win.window;
-#elif BX_PLATFORM_STEAMLINK
-    pd.ndt = wmi.info.vivante.display;
-    pd.nwh = wmi.info.vivante.window;
-#endif // BX_PLATFORM_
-    pd.context = NULL;
-    pd.backBuffer = NULL;
-    pd.backBufferDS = NULL;
-
-    init.platformData = pd;
-
-    init.resolution.width = window_width;
-    init.resolution.height = window_height;
-    init.resolution.reset = BGFX_RESET_VSYNC | BGFX_RESET_SRGB_BACKBUFFER;
-
-    bgfx::init(init);
+    L = luaL_newstate();
 
     uint32_t debug = BGFX_DEBUG_TEXT;
     uint32_t reset = 0;
@@ -163,6 +216,8 @@ public:
           T::consume_key_down(e.key.keysym.sym);
         } else if (e.type == SDL_KEYUP) {
           T::consume_key_up(e.key.keysym.sym);
+        } else if (e.type == SDL_WINDOWEVENT) {
+          //e.window.windowID
         }
       }
 
